@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "lumina_survival",
+  "version": "${version}",
+  "name": "Lumina Survival",
+  "description": "Companion mod for Lumina Shaders: End black hole, natural disasters, thirst, sun blindness, trails and water currents.",
+  "authors": ["you"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.lumina.survival.LuminaSurvival"] },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": { "iris": "*" }
+}
