@@ -14,7 +14,6 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -39,24 +38,13 @@ public final class Thirst {
         save(p);
     }
 
+    // En 26.3 las etiquetas del jugador cambiaron; por ahora la sed no se guarda al cerrar el mundo
+    // (se reinicia a 20 al entrar).
     private static float load(ServerPlayer p) {
-        for (String tag : p.getTags()) {
-            if (tag.startsWith(PREFIX)) {
-                try {
-                    return Integer.parseInt(tag.substring(PREFIX.length())) / 10f;
-                } catch (NumberFormatException ignored) { }
-            }
-        }
         return Config.THIRST_MAX;
     }
 
     private static void save(ServerPlayer p) {
-        Float v = VALUE.get(p.getUUID());
-        if (v == null) return;
-        for (String tag : new ArrayList<>(p.getTags())) {
-            if (tag.startsWith(PREFIX)) p.removeTag(tag);
-        }
-        p.addTag(PREFIX + Math.round(v * 10f));
     }
 
     public static void onLeave(ServerPlayer p) {
@@ -101,7 +89,7 @@ public final class Thirst {
                         p.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 120, 0));
                         Util.bar(p, "Agua salada: te deshidrata.", ChatFormatting.RED);
                     } else if (biome.is(BiomeTags.IS_RIVER) || biome.is(Biomes.SWAMP)) {
-                        if (level.random.nextFloat() < 0.25f) {
+                        if (level.getRandom().nextFloat() < 0.25f) {
                             p.addEffect(new MobEffectInstance(MobEffects.HUNGER, 200, 0));
                             Util.bar(p, "Agua sucia: te sienta mal.", ChatFormatting.GOLD);
                         }

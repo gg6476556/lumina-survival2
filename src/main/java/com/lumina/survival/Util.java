@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
+import java.lang.reflect.Method;
+
 public final class Util {
     private Util() {}
 
@@ -25,7 +27,7 @@ public final class Util {
     }
 
     public static void bar(ServerPlayer p, String msg, ChatFormatting color) {
-        p.displayClientMessage(Component.literal(msg).withStyle(color), true);
+        p.sendSystemMessage(Component.literal(msg).withStyle(color), true); // true = encima de la barra de objetos
     }
 
     /** Direccion (mundo) del agujero negro; misma formula que bh.glsl con orbita 0. */
@@ -36,7 +38,7 @@ public final class Util {
 
     /** Direccion del sol (formula vanilla del angulo del cielo + inclinacion del shader). */
     public static Vec3 sunDirection(ServerLevel level) {
-        double t = level.getDayTime() / 24000.0 - 0.25;   // <-- si no compila en 26.3, ver LEEME
+        double t = dayTime(level) / 24000.0 - 0.25;
         double d = t - Math.floor(t);
         double e = 0.5 - Math.cos(d * Math.PI) / 2.0;
         double angle = (d * 2.0 + e) / 3.0;
@@ -48,5 +50,36 @@ public final class Util {
     public static void particle(ServerLevel level, ParticleOptions fx, double x, double y, double z,
                                 int count, double spread, double speed) {
         level.sendParticles(fx, x, y, z, count, spread, spread, spread, speed);
+    }
+
+    private static Method dayMethod;
+    private static boolean dayResolved;
+
+    /** Hora del dia. En 26.x el metodo cambio de nombre, asi que se busca en tiempo de ejecucion. */
+    public static long dayTime(ServerLevel level) {
+        if (!dayResolved) {
+            dayResolved = true;
+            for (String name : new String[]{"getDayTime", "getDefaultClockTime", "getClockTime"}) {
+                try {
+                    Method m = level.getClass().getMethod(name);
+                    if (Number.class.isAssignableFrom(m.getReturnType()) || m.getReturnType() == long.class) {
+                        dayMethod = m;
+                        break;
+                    }
+                } catch (ReflectiveOperationException | RuntimeException ignored) { }
+            }
+        }
+        if (dayMethod != null) {
+            try {
+                return ((Number) dayMethod.invoke(level)).longValue();
+            } catch (ReflectiveOperationException | RuntimeException ignored) { }
+        }
+        return level.getGameTime(); // respaldo
+    }
+
+    /** Ejecuta un comando como el servidor (sin mostrar salida). */
+    public static void run(ServerLevel level, String command) {
+        var server = level.getServer();
+        server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), command);
     }
 }

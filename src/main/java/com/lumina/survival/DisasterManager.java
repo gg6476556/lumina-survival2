@@ -14,12 +14,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.LightningBolt;
 // Si estos dos imports fallan en 26.3, usa Alt+Enter en IntelliJ (el paquete cambio entre versiones)
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
@@ -50,7 +47,7 @@ public final class DisasterManager {
     }
 
     private static int rand(ServerLevel w, int min, int max) {
-        return min + w.random.nextInt(Math.max(1, max - min));
+        return min + w.getRandom().nextInt(Math.max(1, max - min));
     }
 
     public static void tick(MinecraftServer server) {
@@ -71,7 +68,7 @@ public final class DisasterManager {
                 continue;
             }
             int cd = COOLDOWN.computeIfAbsent(key, k -> rand(w, Config.DISASTER_FIRST_MIN, Config.DISASTER_FIRST_MAX)) - 1;
-            if (cd <= 0) start(w, options.get(w.random.nextInt(options.size())));
+            if (cd <= 0) start(w, options.get(w.getRandom().nextInt(options.size())));
             else COOLDOWN.put(key, cd);
         }
     }
@@ -156,14 +153,14 @@ public final class DisasterManager {
         @Override
         void begin(ServerLevel w, List<ServerPlayer> ps) {
             for (int i = 0; i < 12 && pos == null; i++) {
-                ServerPlayer p = ps.get(w.random.nextInt(ps.size()));
-                double a = w.random.nextDouble() * Math.PI * 2;
-                double dist = 22 + w.random.nextDouble() * 14; // dentro de los 32 bloques de particulas
+                ServerPlayer p = ps.get(w.getRandom().nextInt(ps.size()));
+                double a = w.getRandom().nextDouble() * Math.PI * 2;
+                double dist = 22 + w.getRandom().nextDouble() * 14; // dentro de los 32 bloques de particulas
                 double x = p.getX() + Math.cos(a) * dist, z = p.getZ() + Math.sin(a) * dist;
                 double y = groundY(w, x, z, p.getY(), fire);
                 if (!Double.isNaN(y)) {
                     pos = new Vec3(x, y, z);
-                    heading = a + Math.PI + (w.random.nextDouble() - 0.5) * 1.5; // se acerca al jugador
+                    heading = a + Math.PI + (w.getRandom().nextDouble() - 0.5) * 1.5; // se acerca al jugador
                 }
             }
         }
@@ -172,19 +169,19 @@ public final class DisasterManager {
         boolean run(ServerLevel w, List<ServerPlayer> ps, int t) {
             if (pos == null) return false;
 
-            heading += (w.random.nextDouble() - 0.5) * 0.08;
+            heading += (w.getRandom().nextDouble() - 0.5) * 0.08;
             double nx = pos.x + Math.cos(heading) * 0.22, nz = pos.z + Math.sin(heading) * 0.22;
             double ny = groundY(w, nx, nz, pos.y, fire);
             if (Double.isNaN(ny)) heading += Math.PI;
             else pos = new Vec3(nx, pos.y + (ny - pos.y) * 0.2, nz);
 
             for (int i = 0; i < 12; i++) {
-                double h = w.random.nextDouble() * H;
+                double h = w.getRandom().nextDouble() * H;
                 double r = 1.2 + h * 0.34;
-                double a = t * 0.45 + h * 0.55 + w.random.nextDouble() * 0.6;
+                double a = t * 0.45 + h * 0.55 + w.getRandom().nextDouble() * 0.6;
                 ParticleOptions fx;
-                if (fire) fx = w.random.nextInt(3) == 0 ? ParticleTypes.LARGE_SMOKE : ParticleTypes.FLAME;
-                else fx = w.random.nextInt(4) == 0 ? ParticleTypes.SMOKE : ParticleTypes.CLOUD;
+                if (fire) fx = w.getRandom().nextInt(3) == 0 ? ParticleTypes.LARGE_SMOKE : ParticleTypes.FLAME;
+                else fx = w.getRandom().nextInt(4) == 0 ? ParticleTypes.SMOKE : ParticleTypes.CLOUD;
                 Util.particle(w, fx, pos.x + Math.cos(a) * r, pos.y + h, pos.z + Math.sin(a) * r, 1, 0.05, 0.01);
             }
             if (t % 15 == 0) {
@@ -215,16 +212,16 @@ public final class DisasterManager {
 
             if (Config.TORNADO_RIPS_BLOCKS && t % 2 == 0) {
                 for (int i = 0; i < 4; i++) {
-                    BlockPos bp = BlockPos.containing(pos.x + w.random.nextInt(15) - 7, pos.y + w.random.nextInt(5),
-                            pos.z + w.random.nextInt(15) - 7);
+                    BlockPos bp = BlockPos.containing(pos.x + w.getRandom().nextInt(15) - 7, pos.y + w.getRandom().nextInt(5),
+                            pos.z + w.getRandom().nextInt(15) - 7);
                     if (!w.hasChunkAt(bp)) continue;
                     BlockState st = w.getBlockState(bp);
                     if (st.isAir() || !st.getFluidState().isEmpty()) continue;
                     float hd = st.getDestroySpeed(w, bp);
                     if (hd >= 0f && hd <= 0.4f) w.destroyBlock(bp, false);
                 }
-                if (fire && w.random.nextInt(8) == 0) {
-                    BlockPos fp = BlockPos.containing(pos.x + w.random.nextInt(13) - 6, pos.y + 1, pos.z + w.random.nextInt(13) - 6);
+                if (fire && w.getRandom().nextInt(8) == 0) {
+                    BlockPos fp = BlockPos.containing(pos.x + w.getRandom().nextInt(13) - 6, pos.y + 1, pos.z + w.getRandom().nextInt(13) - 6);
                     if (w.hasChunkAt(fp) && w.getBlockState(fp).isAir()
                             && Blocks.FIRE.defaultBlockState().canSurvive(w, fp)) {
                         w.setBlockAndUpdate(fp, Blocks.FIRE.defaultBlockState());
@@ -245,8 +242,8 @@ public final class DisasterManager {
             for (ServerPlayer p : ps) {
                 if (p.isSpectator()) continue;
                 if (p.onGround() && t % 3 == 0) {
-                    Util.push(p, (w.random.nextDouble() - 0.5) * 0.30 * k, 0.10 * k * w.random.nextDouble(),
-                            (w.random.nextDouble() - 0.5) * 0.30 * k);
+                    Util.push(p, (w.getRandom().nextDouble() - 0.5) * 0.30 * k, 0.10 * k * w.getRandom().nextDouble(),
+                            (w.getRandom().nextDouble() - 0.5) * 0.30 * k);
                 }
                 if (t % 8 == 0) {
                     w.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ENDER_DRAGON_GROWL,
@@ -258,8 +255,8 @@ public final class DisasterManager {
                         Util.particle(w, new BlockParticleOption(ParticleTypes.BLOCK, below),
                                 p.getX(), p.getY() + 0.2, p.getZ(), 8, 0.6, 0.05);
                     }
-                    if (w.random.nextInt(3) == 0) {
-                        BlockPos bp = p.blockPosition().offset(w.random.nextInt(17) - 8, w.random.nextInt(6) - 1, w.random.nextInt(17) - 8);
+                    if (w.getRandom().nextInt(3) == 0) {
+                        BlockPos bp = p.blockPosition().offset(w.getRandom().nextInt(17) - 8, w.getRandom().nextInt(6) - 1, w.getRandom().nextInt(17) - 8);
                         if (w.hasChunkAt(bp)) {
                             BlockState st = w.getBlockState(bp);
                             float hd = st.getDestroySpeed(w, bp);
@@ -278,17 +275,17 @@ public final class DisasterManager {
 
         @Override
         boolean run(ServerLevel w, List<ServerPlayer> ps, int t) {
-            if (t % 25 == 0) meteor(w, ps.get(w.random.nextInt(ps.size())));
+            if (t % 25 == 0) meteor(w, ps.get(w.getRandom().nextInt(ps.size())));
             return true;
         }
 
         static void meteor(ServerLevel w, ServerPlayer target) {
-            double tx = target.getX() + (w.random.nextDouble() - 0.5) * 70;
-            double tz = target.getZ() + (w.random.nextDouble() - 0.5) * 70;
+            double tx = target.getX() + (w.getRandom().nextDouble() - 0.5) * 70;
+            double tz = target.getZ() + (w.getRandom().nextDouble() - 0.5) * 70;
             if (!w.hasChunkAt(BlockPos.containing(tx, target.getY(), tz))) return;
             double ty = w.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(tx), Mth.floor(tz));
-            double sx = tx + (w.random.nextDouble() - 0.5) * 50;
-            double sz = tz + (w.random.nextDouble() - 0.5) * 50;
+            double sx = tx + (w.getRandom().nextDouble() - 0.5) * 50;
+            double sz = tz + (w.getRandom().nextDouble() - 0.5) * 50;
             double sy = Math.min(target.getY() + 70, 315);
             Vec3 dir = new Vec3(tx - sx, ty - sy, tz - sz).normalize();
             // Si el constructor no coincide en 26.3 (Vec3 vs 3 doubles), IntelliJ te lo marca aqui.
@@ -305,28 +302,25 @@ public final class DisasterManager {
 
         @Override
         void begin(ServerLevel w, List<ServerPlayer> ps) {
-            w.setWeatherParameters(0, 30000, true, true);
+            Util.run(w, "weather thunder 3000");
         }
 
         @Override
         void end(ServerLevel w, List<ServerPlayer> ps) {
-            w.setWeatherParameters(12000, 0, false, false);
+            Util.run(w, "weather clear");
         }
 
         @Override
         boolean run(ServerLevel w, List<ServerPlayer> ps, int t) {
             if (t % 30 == 0) {
-                ServerPlayer p = ps.get(w.random.nextInt(ps.size()));
-                double a = w.random.nextDouble() * Math.PI * 2;
-                double d = 10 + w.random.nextDouble() * 30;
+                ServerPlayer p = ps.get(w.getRandom().nextInt(ps.size()));
+                double a = w.getRandom().nextDouble() * Math.PI * 2;
+                double d = 10 + w.getRandom().nextDouble() * 30;
                 BlockPos g = BlockPos.containing(p.getX() + Math.cos(a) * d, p.getY(), p.getZ() + Math.sin(a) * d);
                 if (w.hasChunkAt(g)) {
                     BlockPos top = w.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, g);
-                    LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(w, EntitySpawnReason.TRIGGERED);
-                    if (bolt != null) {
-                        bolt.setPos(top.getX() + 0.5, top.getY(), top.getZ() + 0.5);
-                        w.addFreshEntity(bolt);
-                    }
+                    Util.run(w, String.format(java.util.Locale.ROOT, "summon minecraft:lightning_bolt %d %d %d",
+                            top.getX(), top.getY(), top.getZ()));
                 }
             }
             double s = 0.025 * (0.7 + 0.3 * Math.sin(t * 0.05));
@@ -356,12 +350,12 @@ public final class DisasterManager {
         }
 
         static void shower(ServerLevel w, ServerPlayer p, boolean big) {
-            double sx = p.getX() + (w.random.nextDouble() - 0.5) * 26;
-            double sz = p.getZ() + (w.random.nextDouble() - 0.5) * 26;
+            double sx = p.getX() + (w.getRandom().nextDouble() - 0.5) * 26;
+            double sz = p.getZ() + (w.getRandom().nextDouble() - 0.5) * 26;
             double sy = p.getY() + 14;
             BlockPos from = BlockPos.containing(sx, sy, sz);
             if (!w.hasChunkAt(from) || !w.getBlockState(from).isAir()) return;
-            Vec3 dir = new Vec3((w.random.nextDouble() - 0.5) * 0.15, -1, (w.random.nextDouble() - 0.5) * 0.15).normalize();
+            Vec3 dir = new Vec3((w.getRandom().nextDouble() - 0.5) * 0.15, -1, (w.getRandom().nextDouble() - 0.5) * 0.15).normalize();
             Entity f = big ? new LargeFireball(w, p, dir, 1) : new SmallFireball(w, p, dir);
             f.setPos(sx, sy, sz);
             f.setDeltaMovement(dir.scale(0.5));

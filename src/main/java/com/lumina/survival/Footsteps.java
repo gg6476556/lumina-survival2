@@ -51,7 +51,7 @@ public final class Footsteps {
         BlockState atFeet = level.getBlockState(feet);
         BlockState ground = level.getBlockState(below);
 
-        if ((atFeet.is(Blocks.SHORT_GRASS) || atFeet.is(Blocks.FERN)) && level.random.nextFloat() < 0.5f) {
+        if ((atFeet.is(Blocks.SHORT_GRASS) || atFeet.is(Blocks.FERN)) && level.getRandom().nextFloat() < 0.5f) {
             level.destroyBlock(feet, false); // pasto pisado
         }
         if (atFeet.is(Blocks.SNOW)) {
